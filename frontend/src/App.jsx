@@ -1,12 +1,7 @@
-import Sidebar from './components/Sidebar'
-import Analytics from './components/Analytics'
-import './styles/dashboard.css'
+import InventoryMonitoringInterface from "./components/InventoryMonitoringInterface";
 
-export default function App() {
-  return (
-    <div className="app-root">
-      <Sidebar />
-      <Analytics />
-    </div>
-  )
+function App() {
+  return <InventoryMonitoringInterface />;
 }
+
+export default App;
