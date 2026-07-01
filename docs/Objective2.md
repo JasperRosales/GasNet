@@ -62,7 +62,7 @@ Build a user interface that displays the synchronization status of transaction d
 
 ---
 
-## Week 2
+## Week 2 
 
 ### Day 1 — Inventory Synchronization Monitoring Interface
 **Task Description**

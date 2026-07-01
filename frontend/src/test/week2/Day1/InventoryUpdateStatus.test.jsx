@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import InventoryUpdateStatus from "../components/InventoryUpdateStatus";
+import InventoryUpdateStatus from "../../../components/week2/Day1/InventoryUpdateStatus";
 
 describe("InventoryUpdateStatus Component", () => {
   it("should display the inventory update status title", () => {

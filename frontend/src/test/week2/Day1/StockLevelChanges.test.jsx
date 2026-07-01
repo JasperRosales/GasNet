@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import StockLevelChanges from "../components/StockLevelChanges";
+import StockLevelChanges from "../../../components/week2/Day1/StockLevelChanges";
 
 describe("StockLevelChanges Component", () => {
   it("should display the stock level changes title", () => {

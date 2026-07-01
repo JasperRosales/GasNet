@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import SynchronizationIndicators from "../components/SynchronizationIndicators";
+import SynchronizationIndicators from "../../../components/week2/Day1/SynchronizationIndicators";
 
 describe("SynchronizationIndicators Component", () => {
   it("should display the synchronization indicators title", () => {
