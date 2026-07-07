@@ -1,5 +1,6 @@
-const request = require('supertest')
-const app = require('../src/index.js')
+import request from 'supertest'
+import { describe, it, expect } from 'vitest'
+import app from '../src/index.js'
 
 describe('GET /api/sync-status', () => {
   it('returns sync status payload', async () => {

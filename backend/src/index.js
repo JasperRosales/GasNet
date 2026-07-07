@@ -1,5 +1,5 @@
-const express = require('express')
-const syncRouter = require('./routes/syncStatus')
+import express from 'express'
+import syncRouter from './routes/syncStatus.js'
 
 const app = express()
 app.use(express.json())
@@ -10,4 +10,4 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => console.log(`Server listening on ${port}`))
 }
 
-module.exports = app
+export default app
