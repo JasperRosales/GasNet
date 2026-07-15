@@ -15,9 +15,15 @@ const hasSupabaseEnv = Boolean(
   process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-describe('Supabase CRUD integration (branch_product_prices)', () => {
-  const client = hasSupabaseEnv ? getSupabaseClient() : null
+const client = hasSupabaseEnv ? getSupabaseClient() : null
 
+if (!hasSupabaseEnv) {
+  describe('Create/Read/Update/Delete (branch_product_prices)', () => {
+    it('skips CRUD tests when env vars are not set', () => {})
+  })
+}
+
+describe('Supabase CRUD integration (branch_product_prices)', () => {
   it('skips when SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY are not provided', async () => {
     if (hasSupabaseEnv) {
       expect(client).toBeTruthy()
@@ -28,112 +34,131 @@ describe('Supabase CRUD integration (branch_product_prices)', () => {
 
   if (!hasSupabaseEnv) return
 
-  it('branch_product_prices: create -> read -> update -> delete -> delete non-existent', async () => {
-    const branchId = 999004
-    const productId = 999004
+  let ids = null
 
-    await createBranch(client, { branch_id: branchId, branch_name: 'Crud BP Price Branch' })
-    await createProduct(client, { product_id: productId, product_name: 'Crud BP Price Product' })
+  describe('Create', () => {
+    it('branch_product_prices: create -> broken payload (validation)', async () => {
+      await expect(
+        createBranchProductPrice(client, {
+          // missing branch_id
+          product_id: 1,
+          price: 10
+        })
+      ).rejects.toThrow(/Missing required field: branch_id/i)
 
-    const payload = {
-      branch_id: branchId,
-      product_id: productId,
-      price: 123
-    }
+      await expect(
+        createBranchProductPrice(client, {
+          branch_id: 'nope',
+          product_id: 1,
+          price: 10
+        })
+      ).rejects.toThrow(/Invalid type for branch_id/i)
 
-    const created = await createBranchProductPrice(client, payload)
-    expect(created.branch_id).toBe(branchId)
-    expect(created.product_id).toBe(productId)
-    expect(created.price).toBe(123)
+      await expect(
+        createBranchProductPrice(client, {
+          branch_id: 1,
+          product_id: 1,
+          price: -1
+        })
+      ).rejects.toThrow(/out of range|Invalid value for price/i)
 
-    const fetched = await getBranchProductPrice(client, branchId, productId)
-    expect(fetched).toBeTruthy()
-    expect(fetched.price).toBe(123)
+      await expect(
+        createBranchProductPrice(client, {
+          branch_id: 1,
+          product_id: 1,
+          price: 10.5
+        })
+      ).resolves.toBeTruthy()
+    })
 
-    const updated = await updateBranchProductPrice(client, branchId, productId, { price: 456 })
-    expect(updated.price).toBe(456)
+    it('branch_product_prices: create -> store payload for Read/Update/Delete', async () => {
+      const branchId = 999004
+      const productId = 999004
 
-    await deleteBranchProductPrice(client, branchId, productId)
+      await createBranch(client, { branch_id: branchId, branch_name: 'Crud BP Price Branch' })
+      await createProduct(client, { product_id: productId, product_name: 'Crud BP Price Product' })
 
-    await expect(getBranchProductPrice(client, branchId, productId)).resolves.toBeNull()
-    await expect(deleteBranchProductPrice(client, branchId, productId)).rejects.toThrow(/not found/i)
+      ids = { branchId, productId }
 
-    await deleteProduct(client, productId)
-    await deleteBranch(client, branchId)
+      const payload = {
+        branch_id: branchId,
+        product_id: productId,
+        price: 123
+      }
+
+      const created = await createBranchProductPrice(client, payload)
+      expect(created.branch_id).toBe(branchId)
+      expect(created.product_id).toBe(productId)
+      expect(created.price).toBe(123)
+    })
+
+    it('branch_product_prices: broken relations (FK/constraint)', async () => {
+      const missingBranchId = 988001
+      const missingProductId = 988002
+
+      await expect(
+        createBranchProductPrice(client, {
+          branch_id: missingBranchId,
+          product_id: missingProductId,
+          price: 10
+        })
+      ).rejects.toThrow(/constraint|violat|failed/i)
+    })
   })
 
-  it('branch_product_prices: create -> broken payload (validation)', async () => {
-    await expect(
-      createBranchProductPrice(client, {
-        // missing branch_id
-        product_id: 1,
-        price: 10
-      })
-    ).rejects.toThrow(/Missing required field: branch_id/i)
+  describe('Read', () => {
+    it('branch_product_prices: read -> fetch created entity', async () => {
+      const fetched = await getBranchProductPrice(client, ids.branchId, ids.productId)
+      expect(fetched).toBeTruthy()
+      expect(fetched.price).toBe(123)
+    })
 
-    await expect(
-      createBranchProductPrice(client, {
-        branch_id: 'nope',
-        product_id: 1,
-        price: 10
-      })
-    ).rejects.toThrow(/Invalid type for branch_id/i)
-
-    await expect(
-      createBranchProductPrice(client, {
-        branch_id: 1,
-        product_id: 1,
-        price: -1
-      })
-    ).rejects.toThrow(/out of range|Invalid value for price/i)
-
-    await expect(
-      createBranchProductPrice(client, {
-        branch_id: 1,
-        product_id: 1,
-        price: 10.5
-      })
-    ).resolves.toBeTruthy()
+    it('branch_product_prices: read/update/delete -> broken ids (validation)', async () => {
+      await expect(getBranchProductPrice(client, 0, 1)).rejects.toThrow(/Invalid value for branch_id/i)
+      await expect(getBranchProductPrice(client, 1, 0)).rejects.toThrow(/Invalid value for product_id/i)
+    })
   })
 
-  it('branch_product_prices: read/update/delete -> broken ids (validation)', async () => {
-    await expect(getBranchProductPrice(client, 0, 1)).rejects.toThrow(/Invalid value for branch_id/i)
-    await expect(getBranchProductPrice(client, 1, 0)).rejects.toThrow(/Invalid value for product_id/i)
+  describe('Update', () => {
+    it('branch_product_prices: update -> apply changes', async () => {
+      const updated = await updateBranchProductPrice(client, ids.branchId, ids.productId, { price: 456 })
+      expect(updated.price).toBe(456)
+    })
 
-    await expect(updateBranchProductPrice(client, 0, 1, { price: 10 })).rejects.toThrow(
-      /Invalid value for branch_id/i
-    )
+    it('branch_product_prices: update -> broken payload (validation)', async () => {
+      await expect(updateBranchProductPrice(client, 1, 1, {})).rejects.toThrow(/Missing required field: price/i)
 
-    await expect(deleteBranchProductPrice(client, 'x', 1)).rejects.toThrow(/Invalid type for branch_id/i)
+      await expect(updateBranchProductPrice(client, 1, 1, { price: -1 })).rejects.toThrow(
+        /out of range|Invalid value for price/i
+      )
+
+      await expect(updateBranchProductPrice(client, 1, 1, { price: 'nope' })).rejects.toThrow(
+        /Invalid type for price/i
+      )
+    })
   })
 
-  it('branch_product_prices: update -> broken payload (validation)', async () => {
-    await expect(
-      updateBranchProductPrice(client, 1, 1, {})
-    ).rejects.toThrow(/Missing required field: price/i)
+  describe('Delete', () => {
+    it('branch_product_prices: delete -> remove entity + verify non-existent', async () => {
+      await deleteBranchProductPrice(client, ids.branchId, ids.productId)
 
-    await expect(
-      updateBranchProductPrice(client, 1, 1, { price: -1 })
-    ).rejects.toThrow(/out of range|Invalid value for price/i)
+      await expect(getBranchProductPrice(client, ids.branchId, ids.productId)).resolves.toBeNull()
+      await expect(deleteBranchProductPrice(client, ids.branchId, ids.productId)).rejects.toThrow(/not found/i)
 
-    await expect(
-      updateBranchProductPrice(client, 1, 1, { price: 'nope' })
-    ).rejects.toThrow(/Invalid type for price/i)
-  })
+      await deleteProduct(client, ids.productId)
+      await deleteBranch(client, ids.branchId)
+    })
 
-  it('branch_product_prices: broken relations (FK/constraint)', async () => {
-    const missingBranchId = 988001
-    const missingProductId = 988002
+    it('branch_product_prices: read/update/delete -> broken ids (validation)', async () => {
+      await expect(getBranchProductPrice(client, 0, 1)).rejects.toThrow(/Invalid value for branch_id/i)
+      await expect(getBranchProductPrice(client, 1, 0)).rejects.toThrow(/Invalid value for product_id/i)
 
-    // Ensure the parents are missing by not creating them.
-    // FK/constraint violation message may vary; assert broadly.
-    await expect(
-      createBranchProductPrice(client, {
-        branch_id: missingBranchId,
-        product_id: missingProductId,
-        price: 10
-      })
-    ).rejects.toThrow(/constraint|violat|failed/i)
+      await expect(updateBranchProductPrice(client, 0, 1, { price: 10 })).rejects.toThrow(
+        /Invalid value for branch_id/i
+      )
+
+      await expect(deleteBranchProductPrice(client, 'x', 1)).rejects.toThrow(/Invalid type for branch_id/i)
+    })
   })
 })
 

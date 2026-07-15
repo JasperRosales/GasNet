@@ -14,9 +14,15 @@ const hasSupabaseEnv = Boolean(
   process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-describe('Supabase CRUD integration (sales_transactions)', () => {
-  const client = hasSupabaseEnv ? getSupabaseClient() : null
+const client = hasSupabaseEnv ? getSupabaseClient() : null
 
+if (!hasSupabaseEnv) {
+  describe('Create/Read/Update/Delete (sales_transactions)', () => {
+    it('skips CRUD tests when env vars are not set', () => {})
+  })
+}
+
+describe('Supabase CRUD integration (sales_transactions)', () => {
   it('skips when SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY are not provided', async () => {
     if (hasSupabaseEnv) {
       expect(client).toBeTruthy()
@@ -27,99 +33,115 @@ describe('Supabase CRUD integration (sales_transactions)', () => {
 
   if (!hasSupabaseEnv) return
 
-  it('sales_transactions: create -> read -> update -> delete -> delete non-existent', async () => {
-    const branchId = 999006
-    const staffId = '00000000-0000-4000-8000-000000000003'
+  let ids = null
 
-    await createBranch(client, { branch_id: branchId, branch_name: 'Crud SalesTx Branch' })
-    await createStaff(client, { staff_id: staffId, username: 'crud_sales_staff_1' })
+  describe('Create', () => {
+    it('create -> broken payload (validation)', async () => {
+      await expect(
+        createSalesTransaction(client, {
+          // missing sales_id
+          idempotency_key: 'idem'
+        })
+      ).rejects.toThrow(/Missing required field: sales_id/i)
 
-    const salesId = 999006
-    const payload = {
-      sales_id: salesId,
-      idempotency_key: 'crud_sales_tx_idem_1'
-    }
+      await expect(
+        createSalesTransaction(client, {
+          sales_id: 'nope',
+          idempotency_key: 'idem'
+        })
+      ).rejects.toThrow(/Invalid type for sales_id/i)
 
-    const created = await createSalesTransaction(client, payload)
-    expect(created.sales_id).toBe(salesId)
-    expect(created.idempotency_key).toBe(payload.idempotency_key)
+      await expect(
+        createSalesTransaction(client, {
+          sales_id: 0,
+          idempotency_key: 'idem'
+        })
+      ).rejects.toThrow(/out of range/i)
 
-    const fetched = await getSalesTransactionById(client, salesId)
-    expect(fetched).toBeTruthy()
-    expect(fetched.idempotency_key).toBe(payload.idempotency_key)
-
-    const updated = await updateSalesTransaction(client, salesId, {
-      idempotency_key: 'crud_sales_tx_idem_1_updated'
+      await expect(
+        createSalesTransaction(client, {
+          sales_id: 123,
+          idempotency_key: ''
+        })
+      ).rejects.toThrow(/too short/i)
     })
-    expect(updated.idempotency_key).toBe('crud_sales_tx_idem_1_updated')
 
-    await deleteSalesTransaction(client, salesId)
+    it('create -> store payload for Read/Update/Delete', async () => {
+      const branchId = 999006
+      const staffId = '00000000-0000-4000-8000-000000000003'
 
-    await expect(getSalesTransactionById(client, salesId)).resolves.toBeNull()
-    await expect(deleteSalesTransaction(client, salesId)).rejects.toThrow(/not found/i)
+      await createBranch(client, { branch_id: branchId, branch_name: 'Crud SalesTx Branch' })
+      await createStaff(client, { staff_id: staffId, username: 'crud_sales_staff_1' })
 
-    await deleteStaff(client, staffId)
-    await deleteBranch(client, branchId)
+      const salesId = 999006
+      const payload = {
+        sales_id: salesId,
+        idempotency_key: 'crud_sales_tx_idem_1'
+      }
+
+      const created = await createSalesTransaction(client, payload)
+      expect(created.sales_id).toBe(salesId)
+      expect(created.idempotency_key).toBe(payload.idempotency_key)
+
+      ids = { branchId, staffId, salesId }
+    })
   })
 
-  it('sales_transactions: create -> broken payload (validation)', async () => {
-    await expect(
-      createSalesTransaction(client, {
-        // missing sales_id
-        idempotency_key: 'idem'
+  describe('Read', () => {
+    it('read -> fetch created entity', async () => {
+      const fetched = await getSalesTransactionById(client, ids.salesId)
+      expect(fetched).toBeTruthy()
+      expect(fetched.idempotency_key).toBe('crud_sales_tx_idem_1')
+    })
+
+    it('read -> broken id (validation)', async () => {
+      await expect(getSalesTransactionById(client, 0)).rejects.toThrow(/Invalid value for sales_id/i)
+      await expect(getSalesTransactionById(client, 'x')).rejects.toThrow(/Invalid type for sales_id/i)
+    })
+  })
+
+  describe('Update', () => {
+    it('update -> apply changes', async () => {
+      const updated = await updateSalesTransaction(client, ids.salesId, {
+        idempotency_key: 'crud_sales_tx_idem_1_updated'
       })
-    ).rejects.toThrow(/Missing required field: sales_id/i)
+      expect(updated.idempotency_key).toBe('crud_sales_tx_idem_1_updated')
+    })
 
-    await expect(
-      createSalesTransaction(client, {
-        sales_id: 'nope',
-        idempotency_key: 'idem'
-      })
-    ).rejects.toThrow(/Invalid type for sales_id/i)
+    it('update -> broken payload (validation)', async () => {
+      await expect(updateSalesTransaction(client, 0, { idempotency_key: 'x' })).rejects.toThrow(
+        /Invalid value for sales_id/i
+      )
 
-    await expect(
-      createSalesTransaction(client, {
-        sales_id: 0,
-        idempotency_key: 'idem'
-      })
-    ).rejects.toThrow(/out of range/i)
+      await expect(updateSalesTransaction(client, 1, {})).rejects.toThrow(/Missing required field: idempotency_key/i)
 
-    await expect(
-      createSalesTransaction(client, {
-        sales_id: 123,
-        idempotency_key: ''
-      })
-    ).rejects.toThrow(/too short/i)
+      await expect(updateSalesTransaction(client, 1, { idempotency_key: 123 })).rejects.toThrow(
+        /Invalid type for idempotency_key/i
+      )
+
+      await expect(updateSalesTransaction(client, 1, { idempotency_key: ' ' })).rejects.toThrow(/too short/i)
+    })
   })
 
-  it('sales_transactions: read -> broken id (validation)', async () => {
-    await expect(getSalesTransactionById(client, 0)).rejects.toThrow(/Invalid value for sales_id/i)
-    await expect(getSalesTransactionById(client, 'x')).rejects.toThrow(/Invalid type for sales_id/i)
-  })
+  describe('Delete', () => {
+    it('delete -> remove entity + verify non-existent', async () => {
+      await deleteSalesTransaction(client, ids.salesId)
 
-  it('sales_transactions: update -> broken payload (validation)', async () => {
-    await expect(updateSalesTransaction(client, 0, { idempotency_key: 'x' })).rejects.toThrow(
-      /Invalid value for sales_id/i
-    )
+      await expect(getSalesTransactionById(client, ids.salesId)).resolves.toBeNull()
+      await expect(deleteSalesTransaction(client, ids.salesId)).rejects.toThrow(/not found/i)
 
-    await expect(updateSalesTransaction(client, 1, {})).rejects.toThrow(/Missing required field: idempotency_key/i)
+      await deleteStaff(client, ids.staffId)
+      await deleteBranch(client, ids.branchId)
+    })
 
-    await expect(
-      updateSalesTransaction(client, 1, { idempotency_key: 123 })
-    ).rejects.toThrow(/Invalid type for idempotency_key/i)
+    it('delete -> broken id (validation)', async () => {
+      await expect(deleteSalesTransaction(client, 0)).rejects.toThrow(/Invalid value for sales_id/i)
+      await expect(deleteSalesTransaction(client, 'x')).rejects.toThrow(/Invalid type for sales_id/i)
+    })
 
-    await expect(
-      updateSalesTransaction(client, 1, { idempotency_key: ' ' })
-    ).rejects.toThrow(/too short/i)
-  })
-
-  it('sales_transactions: delete -> broken id (validation)', async () => {
-    await expect(deleteSalesTransaction(client, 0)).rejects.toThrow(/Invalid value for sales_id/i)
-    await expect(deleteSalesTransaction(client, 'x')).rejects.toThrow(/Invalid type for sales_id/i)
-  })
-
-  it('sales_transactions: delete -> non-existent entity', async () => {
-    await expect(deleteSalesTransaction(client, 989997)).rejects.toThrow(/not found/i)
+    it('delete -> non-existent entity', async () => {
+      await expect(deleteSalesTransaction(client, 989997)).rejects.toThrow(/not found/i)
+    })
   })
 })
 
