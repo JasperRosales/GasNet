@@ -1,6 +1,6 @@
 import request from 'supertest'
 import { describe, it, expect } from 'vitest'
-import app from '../src/index.js'
+import app from "../src/app.js";
 
 describe('GET /api/sales-analytics', () => {
   it('returns weekly, monthly, and annual analytics reports', async () => {

@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect } from "vitest";
-import app from "../src/index.js";
+import app from "../src/app.js";
 
 describe("GET /api/sync-status", () => {
   it("returns sync status payload", async () => {

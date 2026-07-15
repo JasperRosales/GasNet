@@ -3,9 +3,6 @@ import synchronizeTransactionController from "../controllers/transactionSynchron
 
 const router = express.Router();
 
-router.post(
-  "/transactions/synchronize",
-  synchronizeTransactionController
-);
+router.post("/transactions/synchronize",synchronizeTransactionController);
 
 export default router;

@@ -1,6 +1,7 @@
 import request from 'supertest'
 import { describe, it, expect } from 'vitest'
-import app from '../src/index.js'
+import app from "../src/app.js";
+
 
 describe('GET /api/branch-performance-analysis', () => {
   it('returns branch analysis, comparison, and target progress reports', async () => {

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node src/routes/index.js",
-    "start": "node src/routes/index.js",
+     "dev": "node src/index.js",
+    "start": "node src/index.js",
     "test": "vitest",
     "test:watch": "vitest --watch --globals",
     "test:unit": "vitest run --globals",

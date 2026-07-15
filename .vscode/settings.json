@@ -1,4 +1,0 @@
-{
-  "vitest.rootConfig": "frontend/vitest.config.cjs",
-  "vitest.vitestPackagePath": "frontend/package.json"
-}

@@ -136,17 +136,15 @@ Implement inventory synchronization across connected devices.
 **Sub-Tasks**
 - Synchronize inventory updates
 - Update stock records across devices
-- Validate inventory consistency
 
 **Deliverables**
 - Inventory Synchronization Test Results
 - Stock Update Validation Report
-- Inventory Consistency Report
+
 
 **Acceptance Criteria**
 - It should synchronize inventory updates successfully.
 - It should update stock records correctly.
-- It should maintain inventory consistency across devices.
 
 ---
 

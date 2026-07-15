@@ -7,13 +7,13 @@ import SalesAnalyticsProcessingInterface from "./components/week3/Day1/SalesAnal
 function App() {
   return (
     <><TransactionSynchronizationInterface />,
-    <InventoryMonitoringInterface/>,
-      <CrossDeviceReportsInterface/>,
-      <SalesAnalyticsProcessingInterface/>
+      <InventoryMonitoringInterface/>,
     </>
   );
 }
 //<TransactionSynchronizationInterface />
 //<InventoryMonitoringInterface/>
+//<CrossDeviceReportsInterface/>,
+//<SalesAnalyticsProcessingInterface/>
     
 export default App;

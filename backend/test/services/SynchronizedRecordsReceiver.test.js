@@ -1,4 +1,4 @@
-//week-day1
+//week3 day1
 import { describe, test, expect } from "vitest";
 import receiveSynchronizedRecords from "../../src/services/SynchronizedRecordsReceiver.js";
 

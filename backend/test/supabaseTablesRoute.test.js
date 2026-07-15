@@ -1,7 +1,7 @@
-import request from 'supertest'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import app from '../src/index.js'
-import { getAllPosTablesData } from '../src/services/supabaseTablesService.js'
+import request from "supertest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import app from "../src/app.js";
+import { getAllPosTablesData } from "../src/services/supabaseTablesService.js";
 
 vi.mock('../src/services/supabaseTablesService.js', () => ({
   getAllPosTablesData: vi.fn()
