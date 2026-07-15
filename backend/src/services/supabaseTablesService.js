@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '../config/supabaseClient.js'
-
 export const gasnetTables = [
+
   'branches',
   'staff',
   'products',
@@ -17,6 +17,7 @@ async function fetchTableRows(client, tableName) {
     throw new Error(`Failed to fetch "${tableName}": ${error.message}`)
   }
 
+
   return data
 }
 
@@ -30,3 +31,4 @@ export async function getAllPosTablesData(client = getSupabaseClient()) {
 
   return Object.fromEntries(tableEntries)
 }
+

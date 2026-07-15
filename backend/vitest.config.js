@@ -2,9 +2,12 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    globals: true,
+    globals: false,
     environment: "node",
     include: ["test/**/*.test.js"],
+    browser: { enabled: false },
     setupFiles: [],
   },
 });
+
+

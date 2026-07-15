@@ -1,0 +1,154 @@
+import { describe, it, expect } from 'vitest'
+import { getSupabaseClient } from '../../src/config/supabaseClient.js'
+
+import { createBranch, deleteBranch } from '../../src/services/tables/branchesService.js'
+import { createProduct, deleteProduct } from '../../src/services/tables/productsService.js'
+
+import {
+  createBranchStock,
+  getBranchStockById,
+  updateBranchStock,
+  deleteBranchStock
+} from '../../src/services/tables/branchStockService.js'
+
+const hasSupabaseEnv = Boolean(
+  process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+)
+
+describe('Supabase CRUD integration (branch_stock)', () => {
+  const client = hasSupabaseEnv ? getSupabaseClient() : null
+
+  it('skips when SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY are not provided', async () => {
+    if (hasSupabaseEnv) {
+      expect(client).toBeTruthy()
+      return
+    }
+    expect(client).toBeNull()
+  })
+
+  if (!hasSupabaseEnv) return
+
+  it('branch_stock: create -> read -> update -> delete -> delete non-existent', async () => {
+    const branchId = 999005
+    const productId = 999005
+    const stockId = 999005
+
+    await createBranch(client, { branch_id: branchId, branch_name: 'Crud Stock Branch' })
+    await createProduct(client, { product_id: productId, product_name: 'Crud Stock Product' })
+
+    const payload = {
+      stock_id: stockId,
+      branch_id: branchId,
+      product_id: productId,
+      quantity: 10,
+      reorder_level: 3
+    }
+
+    const created = await createBranchStock(client, payload)
+    expect(created.stock_id).toBe(stockId)
+    expect(created.quantity).toBe(10)
+    expect(created.reorder_level).toBe(3)
+
+    const fetched = await getBranchStockById(client, stockId)
+    expect(fetched).toBeTruthy()
+    expect(fetched.quantity).toBe(10)
+
+    const updated = await updateBranchStock(client, stockId, { quantity: 25, reorder_level: 7 })
+    expect(updated.quantity).toBe(25)
+    expect(updated.reorder_level).toBe(7)
+
+    await deleteBranchStock(client, stockId)
+
+    await expect(getBranchStockById(client, stockId)).resolves.toBeNull()
+    await expect(deleteBranchStock(client, stockId)).rejects.toThrow(/not found/i)
+
+    await deleteProduct(client, productId)
+    await deleteBranch(client, branchId)
+  })
+
+  it('branch_stock: create -> broken payload (validation)', async () => {
+    await expect(
+      createBranchStock(client, {
+        // missing stock_id
+        branch_id: 1,
+        product_id: 1,
+        quantity: 10,
+        reorder_level: 3
+      })
+    ).rejects.toThrow(/Missing required field: stock_id/i)
+
+    await expect(
+      createBranchStock(client, {
+        stock_id: 1,
+        branch_id: 'nope',
+        product_id: 1,
+        quantity: 10,
+        reorder_level: 3
+      })
+    ).rejects.toThrow(/Invalid type for branch_id/i)
+
+    await expect(
+      createBranchStock(client, {
+        stock_id: 1,
+        branch_id: 1,
+        product_id: 1,
+        quantity: -1,
+        reorder_level: 3
+      })
+    ).rejects.toThrow(/out of range|Invalid value for quantity/i)
+
+    await expect(
+      createBranchStock(client, {
+        stock_id: 1,
+        branch_id: 1,
+        product_id: 1,
+        quantity: 10,
+        reorder_level: -1
+      })
+    ).rejects.toThrow(/out of range|Invalid value for reorder_level/i)
+  })
+
+  it('branch_stock: read/update/delete -> broken ids (validation)', async () => {
+    await expect(getBranchStockById(client, 0)).rejects.toThrow(/Invalid value for stock_id/i)
+    await expect(getBranchStockById(client, 'x')).rejects.toThrow(/Invalid type for stock_id/i)
+
+    await expect(updateBranchStock(client, 0, { quantity: 1, reorder_level: 1 })).rejects.toThrow(
+      /Invalid value for stock_id/i
+    )
+
+    await expect(deleteBranchStock(client, 'x')).rejects.toThrow(/Invalid type for stock_id/i)
+  })
+
+  it('branch_stock: update -> broken payload (validation)', async () => {
+    await expect(updateBranchStock(client, 1, {})).rejects.toThrow(/Invalid type for quantity|Invalid value for quantity/i)
+
+    await expect(updateBranchStock(client, 1, { quantity: -1, reorder_level: 0 })).rejects.toThrow(
+      /out of range|Invalid value for quantity/i
+    )
+
+    await expect(updateBranchStock(client, 1, { quantity: 0, reorder_level: -1 })).rejects.toThrow(
+      /out of range|Invalid value for reorder_level/i
+    )
+
+    await expect(updateBranchStock(client, 1, { quantity: 1, reorder_level: 'nope' })).rejects.toThrow(
+      /Invalid type for reorder_level/i
+    )
+  })
+
+  it('branch_stock: broken relations (FK/constraint)', async () => {
+    const missingBranchId = 988003
+    const missingProductId = 988004
+    const missingStockId = 988005
+
+    await expect(
+      createBranchStock(client, {
+        stock_id: missingStockId,
+        branch_id: missingBranchId,
+        product_id: missingProductId,
+        quantity: 1,
+        reorder_level: 0
+      })
+    ).rejects.toThrow(/constraint|violat|failed/i)
+  })
+})
+

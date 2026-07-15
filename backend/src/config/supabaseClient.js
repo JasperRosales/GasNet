@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js'
-
 let cachedClient
 
 function getSupabaseEnvironment() {
@@ -17,8 +15,19 @@ function getSupabaseEnvironment() {
   return { supabaseUrl, serviceRoleKey }
 }
 
-export function getSupabaseClient() {
+export async function getSupabaseClient() {
+
+  // Avoid executing Supabase SDK import-time logic during test discovery.
+  // If env vars are not configured, return null and let callers decide to skip.
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return null
+  }
+
   if (!cachedClient) {
+    // Lazy import to prevent import-time crashes when env vars are missing.
+    const { createClient } = await import('@supabase/supabase-js')
+
+
     const { supabaseUrl, serviceRoleKey } = getSupabaseEnvironment()
     cachedClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -34,3 +43,4 @@ export function getSupabaseClient() {
 export function resetSupabaseClientForTests() {
   cachedClient = undefined
 }
+
