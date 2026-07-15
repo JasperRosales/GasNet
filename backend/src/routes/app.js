@@ -1,5 +1,6 @@
 import express from "express";
 import transactionSynchronizationRoutes from "./transactionSynchronizationRoutes.js";
+import supabaseTablesRouter from "./supabaseTables.js";
 
 const app = express();
 
@@ -12,5 +13,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", transactionSynchronizationRoutes);
+app.use("/api", supabaseTablesRouter);
 
 export default app;

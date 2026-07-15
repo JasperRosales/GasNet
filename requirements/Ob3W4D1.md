@@ -6,22 +6,22 @@
 
 **Week:** 4 | **Day:** 1
 
-## Task: AI Insight Generation Service
+## Task: Supabase Integration Service
 
 ### Sub-Tasks (Breakdown)
-- Generate sales insights.
-- Generate business recommendations.
-- Process sales trends.
+- Get the Data from the supabase server
+- Make the Table Schema for the business requirement
+- Adjust the former services to adapt to the integration
 
 ### Deliverable(s)
-- AI Insight Service Test Results.
-- Sales Insight Report.
-- Recommendation Report.
+- Sql Schema File
+- RLS policies that work with services
+- Supabase Client File
 
 ### Test Suite / PR Acceptance Criteria
-- It should be generating sales insights successfully.
-- It should be generating business recommendations correctly.
-- It should be processing sales trends accurately.
+- It should retrieve the data from the server successfully.
+- It should test all the data being filtered successfully.
+- It should retrieve data and cause fallbacks if there are problems.
 
 ### Instructor Notes
 
