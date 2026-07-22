@@ -1,9 +1,0 @@
-.analytics{padding:28px;flex:1;background:#f8fafc;min-height:100vh}
-.analytics-header{display:flex;flex-direction:column;margin-bottom:18px}
-.analytics-header h1{margin:0;font-size:20px;color:#0f172a}
-.subtitle{color:#475569;margin-top:6px}
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
-.card{background:#fff;padding:14px;border-radius:10px;border:1px solid #e6eef7}
-.analytics-body{display:flex;gap:14px}
-.analytics .left{flex:2}
-.analytics .right{flex:1}

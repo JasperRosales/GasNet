@@ -1,6 +1,0 @@
-.alerts-card{padding:14px;border-radius:8px;border:1px solid #e6eef7;background:#fff}
-.alerts-card ul{margin:8px 0 0 0;padding:0;list-style:none}
-.alerts-card li{padding:8px;border-radius:6px;margin-top:8px}
-.alerts-card li.critical{background:#fff1f2;color:#7f1d1d}
-.alerts-card li.warning{background:#fffbeb;color:#78350f}
-.alerts-card li.info{background:#eff6ff;color:#1e3a8a}
